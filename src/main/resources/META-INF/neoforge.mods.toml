@@ -1,21 +1,24 @@
-modLoader="javafml" #mandatory
-loaderVersion="${loader_version_range}" #mandatory
-license="${mod_license}"
+modLoader="javafml"
+loaderVersion="[4,)"
+license="AGPL-3.0"
+
 [[mods]]
-modId="${mod_id}"
-version="${mod_version}"
-displayName="${mod_name}"
-authors="${mod_authors}"
-description='''${mod_description}'''
-[[dependencies.${mod_id}]]
-    modId="neoforge"
-    type="required"
-    versionRange="[${neo_version},)"
-    ordering="NONE"
-    side="BOTH"
-[[dependencies.${mod_id}]]
-    modId="minecraft"
-    type="required"
-    versionRange="${minecraft_version_range}"
-    ordering="NONE"
-    side="BOTH"
+modId="minecraftlocalizationfileschecker"
+version="${file.jarVersion}"
+displayName="Minecraft Localization Files Checker"
+authors="Misaka_10571"
+description="A simple mod that helps to check if necessary files are installed correctly through config file."
+
+[[dependencies.minecraftlocalizationfileschecker]]
+modId="neoforge"
+type="required"
+versionRange="[21.1,)"
+ordering="NONE"
+side="BOTH"
+
+[[dependencies.minecraftlocalizationfileschecker]]
+modId="minecraft"
+type="required"
+versionRange="[1.21.1,1.22)"
+ordering="NONE"
+side="BOTH"
