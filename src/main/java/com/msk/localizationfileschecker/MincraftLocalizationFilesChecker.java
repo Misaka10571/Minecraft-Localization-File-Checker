@@ -1,117 +1,124 @@
 package com.msk.localizationfileschecker;
 
-import org.slf4j.Logger;
-
-import com.mojang.logging.LogUtils;
-
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.core.registries.Registries;
+import com.mojang.logging.LogManager;
+import com.mojang.logging.Logger;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.food.FoodProperties;
-import net.minecraft.world.item.BlockItem;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.material.MapColor;
-import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.ModContainer;
-import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
-import net.neoforged.neoforge.event.server.ServerStartingEvent;
-import net.neoforged.neoforge.registries.DeferredBlock;
-import net.neoforged.neoforge.registries.DeferredHolder;
-import net.neoforged.neoforge.registries.DeferredItem;
-import net.neoforged.neoforge.registries.DeferredRegister;
+import net.neoforged.fml.loading.FMLPaths;
 
-// The value here should match an entry in the META-INF/neoforge.mods.toml file
-@Mod(MincraftLocalizationFilesChecker.MODID)
-public class MincraftLocalizationFilesChecker {
-    // Define mod id in a common place for everything to reference
-    public static final String MODID = "mincraftlocalizationfileschecker";
-    // Directly reference a slf4j logger
-    public static final Logger LOGGER = LogUtils.getLogger();
-    // Create a Deferred Register to hold Blocks which will all be registered under the "mincraftlocalizationfileschecker" namespace
-    public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
-    // Create a Deferred Register to hold Items which will all be registered under the "mincraftlocalizationfileschecker" namespace
-    public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
-    // Create a Deferred Register to hold CreativeModeTabs which will all be registered under the "mincraftlocalizationfileschecker" namespace
-    public static final DeferredRegister<CreativeModeTab> CREATIVE_MODE_TABS = DeferredRegister.create(Registries.CREATIVE_MODE_TAB, MODID);
+import com.msk.localizationfileschecker.config.CheckerConfig;
+import com.msk.localizationfileschecker.util.FileValidator;
 
-    // Creates a new Block with the id "mincraftlocalizationfileschecker:example_block", combining the namespace and path
-    public static final DeferredBlock<Block> EXAMPLE_BLOCK = BLOCKS.registerSimpleBlock("example_block", BlockBehaviour.Properties.of().mapColor(MapColor.STONE));
-    // Creates a new BlockItem with the id "mincraftlocalizationfileschecker:example_block", combining the namespace and path
-    public static final DeferredItem<BlockItem> EXAMPLE_BLOCK_ITEM = ITEMS.registerSimpleBlockItem("example_block", EXAMPLE_BLOCK);
+import java.nio.file.Path;
+import java.util.List;
+import java.util.Timer;
+import java.util.TimerTask;
 
-    // Creates a new food item with the id "mincraftlocalizationfileschecker:example_id", nutrition 1 and saturation 2
-    public static final DeferredItem<Item> EXAMPLE_ITEM = ITEMS.registerSimpleItem("example_item", new Item.Properties().food(new FoodProperties.Builder()
-            .alwaysEdible().nutrition(1).saturationModifier(2f).build()));
+@Mod(localizationfileschecker.MODID)
+public class localizationfileschecker {
+    public static final String MODID = "localizationfileschecker";
+    private static final Logger LOGGER = LogManager.getLogger();
 
-    // Creates a creative tab with the id "mincraftlocalizationfileschecker:example_tab" for the example item, that is placed after the combat tab
-    public static final DeferredHolder<CreativeModeTab, CreativeModeTab> EXAMPLE_TAB = CREATIVE_MODE_TABS.register("example_tab", () -> CreativeModeTab.builder()
-            .title(Component.translatable("itemGroup.mincraftlocalizationfileschecker")) //The language key for the title of your CreativeModeTab
-            .withTabsBefore(CreativeModeTabs.COMBAT)
-            .icon(() -> EXAMPLE_ITEM.get().getDefaultInstance())
-            .displayItems((parameters, output) -> {
-                output.accept(EXAMPLE_ITEM.get()); // Add the example item to the tab. For your own tabs, this method is preferred over the event
-            }).build());
+    private CheckerConfig config;
+    private boolean hasChecked = false;
+    private List<String> missingFiles;
 
-    // The constructor for the mod class is the first code that is run when your mod is loaded.
-    // FML will recognize some parameter types like IEventBus or ModContainer and pass them in automatically.
-    public MincraftLocalizationFilesChecker(IEventBus modEventBus, ModContainer modContainer) {
-        // Register the commonSetup method for modloading
-        modEventBus.addListener(this::commonSetup);
+    public localizationfileschecker(IEventBus modEventBus, ModContainer modContainer) {
+        // 注册客户端设置事件
+        modEventBus.addListener(this::onClientSetup);
 
-        // Register the Deferred Register to the mod event bus so blocks get registered
-        BLOCKS.register(modEventBus);
-        // Register the Deferred Register to the mod event bus so items get registered
-        ITEMS.register(modEventBus);
-        // Register the Deferred Register to the mod event bus so tabs get registered
-        CREATIVE_MODE_TABS.register(modEventBus);
+        // 加载配置
+        loadConfig();
 
-        // Register ourselves for server and other game events we are interested in.
-        // Note that this is necessary if and only if we want *this* class (MincraftLocalizationFilesChecker) to respond directly to events.
-        // Do not add this line if there are no @SubscribeEvent-annotated functions in this class, like onServerStarting() below.
+        // 注册到 Forge 事件总线
         NeoForge.EVENT_BUS.register(this);
-
-        // Register the item to a creative tab
-        modEventBus.addListener(this::addCreative);
-
-        // Register our mod's ModConfigSpec so that FML can create and load the config file for us
-        modContainer.registerConfig(ModConfig.Type.COMMON, Config.SPEC);
     }
 
-    private void commonSetup(FMLCommonSetupEvent event) {
-        // Some common setup code
-        LOGGER.info("HELLO FROM COMMON SETUP");
-
-        if (Config.LOG_DIRT_BLOCK.getAsBoolean()) {
-            LOGGER.info("DIRT BLOCK >> {}", BuiltInRegistries.BLOCK.getKey(Blocks.DIRT));
-        }
-
-        LOGGER.info("{}{}", Config.MAGIC_NUMBER_INTRODUCTION.get(), Config.MAGIC_NUMBER.getAsInt());
-
-        Config.ITEM_STRINGS.get().forEach((item) -> LOGGER.info("ITEM >> {}", item));
+    private void loadConfig() {
+        Path configPath = FMLPaths.CONFIGDIR.get().resolve("localization_checker.json");
+        config = CheckerConfig.load(configPath);
+        LOGGER.info("Loaded localization checker config with {} files to check",
+                config.getFilesToCheck().size());
     }
 
-    // Add the example block item to the building blocks tab
-    private void addCreative(BuildCreativeModeTabContentsEvent event) {
-        if (event.getTabKey() == CreativeModeTabs.BUILDING_BLOCKS) {
-            event.accept(EXAMPLE_BLOCK_ITEM);
-        }
+    private void onClientSetup(final FMLClientSetupEvent event) {
+        LOGGER.info("Localization Checker initializing...");
     }
 
-    // You can use SubscribeEvent and let the Event Bus discover methods to call
     @SubscribeEvent
-    public void onServerStarting(ServerStartingEvent event) {
-        // Do something when the server starts
-        LOGGER.info("HELLO from server starting");
+    public void onPlayerJoin(ClientPlayerNetworkEvent.LoggingIn event) {
+        if (!hasChecked) {
+            hasChecked = true;
+
+            // 延迟3秒后显示消息，确保玩家完全进入游戏
+            new Timer().schedule(new TimerTask() {
+                @Override
+                public void run() {
+                    checkAndNotify();
+                }
+            }, 3000);
+        }
+    }
+
+    private void checkAndNotify() {
+        Path gameDir = FMLPaths.GAMEDIR.get();
+        FileValidator validator = new FileValidator(gameDir);
+
+        missingFiles = validator.validateFiles(config.getFilesToCheck());
+
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.player != null) {
+            if (missingFiles.isEmpty()) {
+                // 所有文件都已正确安装
+                mc.player.sendSystemMessage(
+                        Component.literal("[ATM10S 汉化] ")
+                                .withStyle(ChatFormatting.GREEN)
+                                .append(Component.literal("✓ 汉化补丁已正确安装！")
+                                        .withStyle(ChatFormatting.WHITE))
+                );
+
+                if (config.isShowDetails()) {
+                    mc.player.sendSystemMessage(
+                            Component.literal("  已验证 " + config.getFilesToCheck().size() + " 个文件")
+                                    .withStyle(ChatFormatting.GRAY)
+                    );
+                }
+            } else {
+                // 有文件缺失
+                mc.player.sendSystemMessage(
+                        Component.literal("[ATM10S 汉化] ")
+                                .withStyle(ChatFormatting.YELLOW)
+                                .append(Component.literal("⚠ 检测到汉化补丁未完全安装")
+                                        .withStyle(ChatFormatting.YELLOW))
+                );
+
+                mc.player.sendSystemMessage(
+                        Component.literal("  缺失 " + missingFiles.size() + " 个文件")
+                                .withStyle(ChatFormatting.RED)
+                );
+
+                if (config.isShowMissingFiles() && missingFiles.size() <= 5) {
+                    for (String file : missingFiles) {
+                        mc.player.sendSystemMessage(
+                                Component.literal("  - " + file)
+                                        .withStyle(ChatFormatting.GRAY)
+                        );
+                    }
+                }
+
+                mc.player.sendSystemMessage(
+                        Component.literal("  请重新安装汉化补丁")
+                                .withStyle(ChatFormatting.AQUA)
+                );
+            }
+        }
     }
 }
