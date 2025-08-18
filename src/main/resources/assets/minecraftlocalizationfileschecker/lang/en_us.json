@@ -1,0 +1,13 @@
+{
+  "itemGroup.minecraftlocalizationfileschecker": "Example Mod Tab",
+  "block.minecraftlocalizationfileschecker.example_block": "Example Block",
+  "item.minecraftlocalizationfileschecker.example_item": "Example Item",
+
+  "minecraftlocalizationfileschecker.configuration.title": "MinecraftLocalizationFilesChecker Configs",
+  "minecraftlocalizationfileschecker.configuration.section.minecraftlocalizationfileschecker.common.toml": "MinecraftLocalizationFilesChecker Configs",
+  "minecraftlocalizationfileschecker.configuration.section.minecraftlocalizationfileschecker.common.toml.title": "MinecraftLocalizationFilesChecker Configs",
+  "minecraftlocalizationfileschecker.configuration.items": "Item List",
+  "minecraftlocalizationfileschecker.configuration.logDirtBlock": "Log Dirt Block",
+  "minecraftlocalizationfileschecker.configuration.magicNumberIntroduction": "Magic Number Text",
+  "minecraftlocalizationfileschecker.configuration.magicNumber": "Magic Number"
+}
