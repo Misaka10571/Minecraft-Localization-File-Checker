@@ -1,7 +1,0 @@
-{
-  "localizationfileschecker.message.installed": "汉化补丁已正确安装！",
-  "localizationfileschecker.message.missing": "检测到汉化补丁未完全安装",
-  "localizationfileschecker.message.missing_count": "缺失 %s 个文件",
-  "localizationfileschecker.message.reinstall": "请重新安装汉化补丁",
-  "localizationfileschecker.message.verified": "已验证 %s 个文件"
-}

@@ -1,7 +1,0 @@
-{
-  "localizationfileschecker.message.installed": "Localization patch installed correctly!",
-  "localizationfileschecker.message.missing": "Localization patch not fully installed",
-  "localizationfileschecker.message.missing_count": "Missing %s files",
-  "localizationfileschecker.message.reinstall": "Please reinstall the localization patch",
-  "localizationfileschecker.message.verified": "Verified %s files"
-}
