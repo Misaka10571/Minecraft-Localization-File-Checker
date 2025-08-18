@@ -1,13 +1,7 @@
 {
-  "itemGroup.mincraftlocalizationfileschecker": "Example Mod Tab",
-  "block.mincraftlocalizationfileschecker.example_block": "Example Block",
-  "item.mincraftlocalizationfileschecker.example_item": "Example Item",
-
-  "mincraftlocalizationfileschecker.configuration.title": "MincraftLocalizationFilesChecker Configs",
-  "mincraftlocalizationfileschecker.configuration.section.mincraftlocalizationfileschecker.common.toml": "MincraftLocalizationFilesChecker Configs",
-  "mincraftlocalizationfileschecker.configuration.section.mincraftlocalizationfileschecker.common.toml.title": "MincraftLocalizationFilesChecker Configs",
-  "mincraftlocalizationfileschecker.configuration.items": "Item List",
-  "mincraftlocalizationfileschecker.configuration.logDirtBlock": "Log Dirt Block",
-  "mincraftlocalizationfileschecker.configuration.magicNumberIntroduction": "Magic Number Text",
-  "mincraftlocalizationfileschecker.configuration.magicNumber": "Magic Number"
+  "localizationfileschecker.message.installed": "Localization patch installed correctly!",
+  "localizationfileschecker.message.missing": "Localization patch not fully installed",
+  "localizationfileschecker.message.missing_count": "Missing %s files",
+  "localizationfileschecker.message.reinstall": "Please reinstall the localization patch",
+  "localizationfileschecker.message.verified": "Verified %s files"
 }
